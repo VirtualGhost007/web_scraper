@@ -11,6 +11,13 @@ def data_extractor():
         bd_list = []
         ba_list = []
         sqft_list = []
+        url_list = []
+
+        for link in soup.find_all("a"):
+            url = link.get("href")
+            if url in url_list:
+                continue
+            url_list.append(url)
 
         for area in soup.find_all("b"):
             no = area.text
@@ -61,6 +68,4 @@ def data_extractor():
     for i in range(len(price_list)):
         final.append(bd_list[i] + ba_list[i] + " " + sqft_list[i] + " " + price_list[i])
 
-    print(final)
-    print(len(address_list))
 data_extractor()
