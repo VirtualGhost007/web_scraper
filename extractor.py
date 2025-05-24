@@ -1,71 +1,60 @@
-def data_extractor():
-    from bs4 import BeautifulSoup
-    with open("page.html") as response:
+def extracting(final, string):
+    import pytz
+    from datetime import datetime
+    from scraper import scraping
+    from parcel import parcel_scraper
+    file = scraping(string)
+    data = file["cat1"]["searchResults"]["mapResults"]
+    price_list = []
+    bds_list = []
+    ba_list = []
+    address_list = []
+    area_list = []
+    geo_list = []
+    zestimates_list = []
+    rent_zest_list = []
+    days_ago = []
+    url_list = []
+    parcel_id = []
+    year_built = []
 
-        web_page = response
-        # print(web_page)
+    PST = pytz.timezone("US/Pacific")
+    datetime_pst = datetime.now(PST)
+    current_time = datetime_pst.strftime("%Y-%m-%d %H:%M:%S")
 
-        soup = BeautifulSoup(web_page, "html.parser")
-        address_list = []
-        price_list = []
-        bd_list = []
-        ba_list = []
-        sqft_list = []
-        url_list = []
+    for i in range(len(data)):
+        if "zpid" in data[i]:
+            wanted = data[i]
+        else:
+            continue
+        price_list.append(wanted["price"])
+        address_list.append(wanted["address"])
+        part = wanted["address"].split(" ")
+        need = f"{part[0]}+{part[1]}+{part[2]}"
+        url1 = f"https://psearch.kitsap.gov/pdetails/Default?parcel={need}&type=site"
+        # print(url1)
+        parcel_scraper(url1, year_built, parcel_id)
+        # print(year_built)
+        # print(parcel_id)
+        bds_list.append(wanted["beds"])
+        ba_list.append(wanted["baths"])
+        area_list.append(wanted["area"])
+        geo_list.append(f"Latitude {wanted["latLong"]["latitude"]} Longitude {wanted["latLong"]["longitude"]}")
+        # if "text" in wanted["variableData"]:
+        #     days_ago.append(wanted["variableData"]["text"])
+        # else:
+        #     days_ago.append("None")
+        url_list.append(f"https://www.zillow.com{wanted["detailUrl"]}")
+        if "zestimate" in wanted["hdpData"]["homeInfo"]:
+            zestimates_list.append(wanted["hdpData"]["homeInfo"]["zestimate"])
+        else:
+            zestimates_list.append("None")
+        if "rentZestimate" in wanted["hdpData"]["homeInfo"]:
+            rent_zest_list.append(wanted["hdpData"]["homeInfo"]["rentZestimate"])
+        else:
+            rent_zest_list.append("None")
+        days_ago.append("%.2f" % (wanted["hdpData"]["homeInfo"]["timeOnZillow"] / 86400000))
 
-        for link in soup.find_all("a"):
-            url = link.get("href")
-            if url in url_list:
-                continue
-            url_list.append(url)
-
-        for area in soup.find_all("b"):
-            no = area.text
-            type_area = area.next_sibling.next_sibling.text
-            if type_area == "bds":
-                bd_list.append(no + type_area)
-            elif type_area == "ba":
-                ba_list.append(no + type_area)
-            elif type_area == "sqft":
-                sqft_list.append(no + type_area)
-            else:
-                continue
-
-        for price in soup.find_all("span"):
-            price1 = price.text
-            if "$" in price1:
-                price_list.append(price1)
-            else:
-                continue
-
-        for address in soup.find_all("address"):
-            address1 = address.text.strip()
-            address_list.append(address1)
-
-    i = 0
-    for price in price_list:
-        if "bds" in price:
-            price_list.append(price)
-            price_list.append(price_list[i + 1])
-            price_list.append(price_list[i + 2])
-            price_list.pop(i)
-            price_list.pop(i + 1)
-            price_list.pop(i + 2)
-            address_list.append(address_list[i])
-            address_list.append(address_list[i])
-            address_list.append(address_list[i])
-            address_list.pop(i)
-            break
-        i += 1
-
-    diff = len(price_list) - len(ba_list)
-    for j in range(diff):
-        ba_list.append("None")
-        bd_list.append("None")
-        sqft_list.append("None")
-
-    final = []
     for i in range(len(price_list)):
-        final.append(bd_list[i] + ba_list[i] + " " + sqft_list[i] + " " + price_list[i])
+        final.append((address_list[i], bds_list[i], ba_list[i], area_list[i], geo_list[i], price_list[i], zestimates_list[i], rent_zest_list[i], url_list[i], days_ago[i], parcel_id[i], year_built[i], current_time))
 
-data_extractor()
